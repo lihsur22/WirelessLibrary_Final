@@ -41,7 +41,7 @@ export default class TSscreen extends React.Component{
 
     initBookIssue = async ()=>{
         //add a transaction
-        db.collection("transaction").add({
+        db.collection("transactions").add({
           'studentId' : this.state.scannedStudentID,
           'bookId' : this.state.scannedBookID,
           'data' : firebase.firestore.Timestamp.now().toDate(),
@@ -88,8 +88,99 @@ export default class TSscreen extends React.Component{
         })
     }
 
+    checkStudentEligibilityForIssue = async () => {
+        const stRef = await db.collection("students/").where("studentID","==",this.state.scannedStudentID).get();
+        //const stRef = await db.collection("students/ ST0010234/studentID").get();
+        var isStudentEligible = '';
+        if(stRef.docs.length == 0){
+            this.setState({
+                scannedStudentID : '',
+                scannedBookID : ''
+            });
+            isStudentEligible = false;
+            alert("Student Id is Non-Existent");
+        } else {
+            stRef.docs.map(doc=>{var student = doc.data()
+                if(student.numberOfBooksIssued < 2){
+                    isStudentEligible = true;
+                } else {
+                    isStudentEligible = false;
+                    alert("The Student has already Issued 2 books");
+                    this.setState({
+                        scannedStudentID : '',
+                        scannedBookID : ''
+                    });
+                }
+            });
+        }
+        return isStudentEligible;
+    }
+
+    checkStudentEligibilityForReturn = async () => {
+        const trRef = await db.collection("transactions/").where("bookId","==",this.state.scannedBookID).limit(1).get();
+        var isStudentEligible = '';
+        if(trRef.docs.length==0){
+            isStudentEligible = false;
+            alert("Something Went Wrong");
+        } else {
+            trRef.docs.map(doc=>{var lastBookTrans = doc.data()
+                if(lastBookTrans.studentId === this.state.scannedStudentID){
+                    isStudentEligible = true;
+                } else {
+                    isStudentEligible = false;
+                    alert("The Book Hasn't Been Issued By The Student");
+                    this.setState({
+                        scannedStudentID : '',
+                        scannedBookID : ''
+                    });
+                }   
+            });
+        }
+        return isStudentEligible;
+    }
+
+    checkBookEligibility = async () => {
+        const bookRef = await db.collection("books/").where("bookID","==",this.state.scannedBookID).get();
+        //console.log(bookRef.docs);
+        var transactionType = '';
+        if(bookRef.docs.length==0){
+            transactionType = false;
+        } else {
+            bookRef.docs.map(doc=>{var book = doc.data()
+                //console.log(doc.data());
+                if(book.bookAvailability){
+                    transactionType = "Issue";
+                } else {
+                    transactionType = "Return";
+                }
+            });
+        }
+        return transactionType;
+    }
+
     handleTransaction = async () => {
-        var transMsg = '';
+        var transactionType = await this.checkBookEligibility();
+        if(!transactionType){
+            alert("Book Doesn't Exist in Library");
+            this.setState({
+                scannedStudentID : '',
+                scannedBookID : ''
+            });
+        } else if(transactionType === 'Issue') {
+            var isStudentEligible = await this.checkStudentEligibilityForIssue();
+            if(isStudentEligible){
+                this.initBookIssue();
+                alert('Book Has Been Issued');
+            }
+        } else {
+            var isStudentEligible = await this.checkStudentEligibilityForReturn();
+            if(isStudentEligible){
+                this.initBookReturn();
+                alert("Book Returned to Library");
+            }
+        }
+
+        /*var transMsg = '';
         db.collection("books").doc(this.state.scannedBookID).get()
         .then((doc)=>{
             var book = doc.data();
@@ -105,7 +196,7 @@ export default class TSscreen extends React.Component{
                 alert(transMsg);
             }
         })
-        this.setState({transMsg : transMsg});
+        this.setState({transMsg : transMsg});*/
     }
 
     render(){
