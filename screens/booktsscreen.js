@@ -44,7 +44,7 @@ export default class TSscreen extends React.Component{
         db.collection("transactions").add({
           'studentId' : this.state.scannedStudentID,
           'bookId' : this.state.scannedBookID,
-          'data' : firebase.firestore.Timestamp.now().toDate(),
+          'date' : firebase.firestore.Timestamp.now().toDate(),
           'transactionType' : "Issue"
         })
     
