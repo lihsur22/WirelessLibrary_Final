@@ -10,6 +10,7 @@ export default class SearchScreen extends React.Component{
 
     searchTransaction = async (text) => {
         var enteredText = text.split("");
+        this.setState({allTrans : []})
         if(enteredText[0].toUpperCase() === 'W'){
             const transaction = await db.collection("transactions").where('bookId','==',text).get();
             transaction.docs.map((doc)=>{this.setState({allTrans : [...this.state.allTrans,doc.data()], lastVisTrans : doc })})
@@ -51,17 +52,17 @@ export default class SearchScreen extends React.Component{
                     data={this.state.allTrans}
                     renderItem={({item})=>
                         (
-                        <View style={{borderBottomWidth : 2}}>
-                            <Text>{'Book Id : ' + item.bookId}</Text>
-                            <Text>{'Student Id : ' + item.studentId}</Text>
-                            <Text>{'Transaction Type : ' + item.transactionType}</Text>
-                            <Text>{'Date : ' + item.date}</Text>
-                        </View>
+                            <View style={{borderBottomWidth : 2}}>
+                                <Text>{'Book Id : ' + item.bookId}</Text>
+                                <Text>{'Student Id : ' + item.studentId}</Text>
+                                <Text>{'Transaction Type : ' + item.transactionType}</Text>
+                                <Text>{'Date : ' + item.date.toDate()}</Text>
+                            </View>
                         )
                     }
                     keyExtractor={(item,index)=>index.toString()}
-                    onEndReached={this.fetchMoreTrans()}
-                    onEndReachedThreshold={0.25}/>
+                    onEndReachedThreshold={0.8}
+                    onEndReached={this.fetchMoreTrans()}/>
             </View>
         )
     }
